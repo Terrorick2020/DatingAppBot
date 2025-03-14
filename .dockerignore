@@ -1,7 +1,11 @@
 .vscode/
+
 node_modules/
 dist/
 
+package-lock.json
+
 .env.example
 .gitignore
+
 README.md
