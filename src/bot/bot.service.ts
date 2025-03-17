@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectBot } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
 import { Context } from 'telegraf/typings/context';
+import { previewText } from '@/constant/content';
 
 @Injectable()
 export class BotService {
@@ -14,7 +15,7 @@ export class BotService {
         inline_keyboard: [
           [
             {
-              text: 'К знакомствам',
+              text: '👉 Начать общени',
               web_app: {
                 url: process.env.CLIENT_URL ?? '',
               },
@@ -24,7 +25,7 @@ export class BotService {
       },
     };
 
-    await ctx.reply('Welcome, go to the  our app', inlineKeyboard)
+    await ctx.reply(previewText, inlineKeyboard)
 
   }
 }
