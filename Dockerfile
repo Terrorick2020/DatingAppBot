@@ -1,19 +1,19 @@
-# Базовый образ с зависимостями
+# Используем Node.js 20 на Alpine Linux
 FROM node:20-alpine AS deps
 WORKDIR /bot
 
-# Установка Nest CLI и зависимостей
+# Устанавливаем глобально NestJS CLI
 RUN npm install -g @nestjs/cli@latest
 
+# Копируем package.json и устанавливаем зависимости
 COPY package*.json ./
-RUN npm ci --omit=dev --prefer-offline
+RUN npm install --omit=dev --prefer-offline
 
 # Этап сборки
 FROM node:20-alpine AS builder
 WORKDIR /bot
 COPY --from=deps /bot/node_modules ./node_modules
 COPY . . 
-RUN npm run build
 
 # Финальный образ
 FROM node:20-alpine
@@ -22,5 +22,9 @@ COPY --from=builder /bot/dist ./dist
 COPY --from=builder /bot/node_modules ./node_modules
 COPY package*.json ./
 
-EXPOSE 9000
-CMD ["npm", "run", "start:prod"]
+# Устанавливаем зависимости (если что-то потерялось при копировании)
+RUN npm install --omit=dev --prefer-offline
+
+# Открываем порт и запускаем бота
+EXPOSE 3001
+CMD ["node", "dist/main.js"]
