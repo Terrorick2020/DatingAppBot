@@ -1,19 +1,23 @@
-FROM node:20-alpine
-
-RUN apk add --no-cache bash netcat-openbsd && \
-    npm install -g @nestjs/cli
-
+# Базовый образ с зависимостями
+FROM node:20-alpine AS deps
 WORKDIR /bot
+COPY package*.json ./
+RUN npm ci --omit=dev --legacy-peer-deps --prefer-offline
 
-COPY package.json .
-
-RUN npm install --omit=dev --legacy-peer-deps && \
-    npm install --save-dev @types/node
-
+# Этап сборки
+FROM node:20-alpine AS builder
+WORKDIR /bot
+RUN apk add --no-cache bash
+COPY --from=deps /bot/node_modules ./node_modules
 COPY . .
-
 RUN npm run build
 
-EXPOSE 9000
+# Финальный образ
+FROM node:20-alpine
+WORKDIR /bot
+COPY --from=builder /bot/node_modules ./node_modules
+COPY --from=builder /bot/dist ./dist
+COPY package*.json ./
 
+EXPOSE 9000
 CMD ["npm", "run", "start:prod"]
