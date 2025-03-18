@@ -4,7 +4,7 @@ WORKDIR /bot
 RUN npm install -g @nestjs/cli@latest
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --omit=dev --prefer-offline
+RUN npm install --legacy-peer-deps --prefer-offline
 
 FROM node:20-alpine AS builder
 WORKDIR /bot
