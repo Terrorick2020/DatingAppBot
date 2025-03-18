@@ -1,17 +1,18 @@
 # Базовый образ с зависимостями
 FROM node:20-alpine AS deps
 WORKDIR /bot
-COPY package*.json ./
 
 # Установка Nest CLI и зависимостей
-RUN npm install -g @nestjs/cli@latest && \
-    npm ci --legacy-peer-deps --omit=dev
+RUN npm install -g @nestjs/cli@latest
+
+COPY package*.json ./
+RUN npm ci --omit=dev --prefer-offline
 
 # Этап сборки
 FROM node:20-alpine AS builder
 WORKDIR /bot
 COPY --from=deps /bot/node_modules ./node_modules
-COPY . .
+COPY . . 
 RUN npm run build
 
 # Финальный образ
