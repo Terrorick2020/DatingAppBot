@@ -10,6 +10,7 @@ FROM node:20-alpine AS builder
 WORKDIR /bot
 COPY --from=deps /bot/node_modules ./node_modules
 COPY . . 
+RUN npm install -g @nestjs/cli
 RUN npm run build
 
 FROM node:20-alpine
