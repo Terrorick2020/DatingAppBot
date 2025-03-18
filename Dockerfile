@@ -21,5 +21,5 @@ COPY package*.json ./
 
 RUN npm install --omit=dev --prefer-offline
 
-EXPOSE 3001
+EXPOSE 9000
 CMD ["node", "dist/main.js"]
