@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectBot } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
 import { Context } from 'telegraf/typings/context';
-import { previewText } from '@/constant/content';
+import { previewText } from '@/constant/content'; 
 
 @Injectable()
 export class BotService {
