@@ -1,18 +1,24 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TelegrafModule } from 'nestjs-telegraf'
 import { BotService } from './bot.service'
 import { BotUpdate } from './bot.update'
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-          }),
-        TelegrafModule.forRoot({
-            token: process.env.BOT_TOKEN ?? '',
-        }),
-    ],
-    providers: [BotService, BotUpdate],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+		}),
+		TelegrafModule.forRootAsync({
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: async (configService: ConfigService) => {
+				const botToken = configService.get<string>('BOT_TOKEN')
+				console.log('Bot Token:', botToken)
+				return { token: botToken ?? '' }
+			},
+		}),
+	],
+	providers: [BotService, BotUpdate],
 })
 export class BotModule {}
