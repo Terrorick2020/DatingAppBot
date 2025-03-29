@@ -15,7 +15,7 @@ export class BotService {
         inline_keyboard: [
           [
             {
-              text: '👉 Начать общени',
+              text: '👉 Начать общение',
               web_app: {
                 url: process.env.CLIENT_URL ?? '',
               },
