@@ -1,26 +1,22 @@
-FROM node:20-alpine AS deps
+# Сборка
+FROM node:22-alpine AS builder
+
 WORKDIR /bot
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
-RUN npm install -g @nestjs/cli@latest
-
-COPY package*.json ./
-RUN npm install --legacy-peer-deps --prefer-offline
-
-FROM node:20-alpine AS builder
-WORKDIR /bot
-COPY --from=deps /bot/node_modules ./node_modules
-COPY . . 
-RUN npm install -g @nestjs/cli
+COPY . .
 RUN npm run build
 
-FROM node:20-alpine
-WORKDIR /bot
-COPY --from=builder /bot/dist ./dist
-COPY --from=builder /bot/node_modules ./node_modules
-COPY package*.json ./
-COPY .env .env
+# Прод
+FROM node:22-alpine
 
-RUN npm install --omit=dev --prefer-offline
+WORKDIR /bot
+COPY package.json ./
+RUN npm install --omit=dev --legacy-peer-deps
+
+COPY --from=builder /bot/node_modules ./node_modules
+COPY --from=builder /bot/dist ./dist
 
 EXPOSE 9000
 CMD ["node", "dist/main.js"]
