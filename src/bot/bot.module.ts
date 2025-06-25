@@ -4,8 +4,6 @@ import { TelegrafModule } from 'nestjs-telegraf'
 import { BotService } from './bot.service'
 import { BotUpdate } from './bot.update'
 import { RedisPubSubSubscriber } from './redis-pub-sub.subscriber'
-import { LoggerModule } from '../logger/logger.module'
-import { AppLogger } from '../logger/logger.service'
 
 @Module({
 	imports: [
@@ -20,10 +18,9 @@ import { AppLogger } from '../logger/logger.service'
 				console.log('Bot Token:', botToken)
 				return { token: botToken ?? '' }
 			},
-		}),
-		LoggerModule
+		})
 	],
-	providers: [BotService, BotUpdate, RedisPubSubSubscriber, AppLogger],
+	providers: [BotService, BotUpdate, RedisPubSubSubscriber],
 	exports: [BotService],
 })
 export class BotModule {}
