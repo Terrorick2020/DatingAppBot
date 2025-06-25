@@ -20,5 +20,6 @@ import { BotUpdate } from './bot.update'
 		}),
 	],
 	providers: [BotService, BotUpdate],
+	exports: [BotService],
 })
 export class BotModule {}

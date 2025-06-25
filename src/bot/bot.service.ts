@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectBot } from 'nestjs-telegraf'
 import { Telegraf } from 'telegraf'
 import { Context } from 'telegraf/typings/context'
-import { previewText } from '@/constant/content'
+import { previewText } from '../constant/content'
 
 @Injectable()
 export class BotService {
@@ -25,5 +25,16 @@ export class BotService {
 		}
 
 		await ctx.reply(previewText, inlineKeyboard)
+	}
+
+	async notifyUser(telegramId: number | string, text: string) {
+		try {
+			await this.bot.telegram.sendMessage(telegramId, text)
+		} catch (error) {
+			console.error(
+				`Ошибка при отправке уведомления пользователю ${telegramId}:`,
+				error
+			)
+		}
 	}
 }
