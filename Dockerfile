@@ -1,24 +1,26 @@
-FROM oven/bun:latest
+# Сборка
+FROM node:22-alpine AS builder
+
 WORKDIR /bot
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
-# Копирование package.json и lockfile
-COPY package*.json ./
-COPY bun.lockb ./
-
-# Установка зависимостей
-RUN bun install
-
-# Копирование всего проекта
 COPY . .
+RUN npm run build
 
-# Сборка приложения
-RUN bun run build
+# Прод
+FROM node:22-alpine
+
+WORKDIR /bot
+COPY package.json ./
+RUN npm install --omit=dev --legacy-peer-deps
+
+COPY --from=builder /bot/node_modules ./node_modules
+COPY --from=builder /bot/dist ./dist
 
 # Установка только production зависимостей
 RUN bun install --production
 
 # Открытие порта
 EXPOSE 9000
-
-# Запуск приложения
-CMD ["bun", "dist/main.js"]
+CMD ["node", "dist/main.js"]
