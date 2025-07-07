@@ -4,6 +4,8 @@ import { TelegrafModule } from 'nestjs-telegraf'
 import { BotService } from './bot.service'
 import { BotUpdate } from './bot.update'
 import { RedisPubSubSubscriber } from './redis-pub-sub.subscriber'
+import { UnreadNotificationsService } from './unread-notifications.service'
+import { RedisPubSubService } from './redis-pub-sub.service'
 
 @Module({
 	imports: [
@@ -20,7 +22,13 @@ import { RedisPubSubSubscriber } from './redis-pub-sub.subscriber'
 			},
 		})
 	],
-	providers: [BotService, BotUpdate, RedisPubSubSubscriber],
+	providers: [
+		BotService, 
+		BotUpdate, 
+		RedisPubSubSubscriber, 
+		UnreadNotificationsService,
+		RedisPubSubService
+	],
 	exports: [BotService],
 })
 export class BotModule {}
