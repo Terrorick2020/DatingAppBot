@@ -1,4 +1,4 @@
-import { Action, Command, Ctx, Update } from 'nestjs-telegraf'
+import { Action, Command, Ctx, On, Update } from 'nestjs-telegraf'
 import fetch from 'node-fetch'
 import { Context } from 'telegraf'
 import { BotService } from './bot.service'
@@ -13,7 +13,18 @@ export class BotUpdate {
 
 	@Command('start')
 	async onStart(@Ctx() ctx: Context) {
-		await this.botService.start(ctx)
+		// Проверяем, есть ли параметр в команде start
+		const messageText = ctx.message?.text || ''
+		const startParam = messageText.split(' ')[1]
+		
+		if (startParam?.startsWith('psychologist_')) {
+			// Обработка регистрации психолога
+			const code = startParam.replace('psychologist_', '')
+			await this.botService.handlePsychologistRegistration(ctx, code)
+		} else {
+			// Обычная регистрация пользователя
+			await this.botService.start(ctx)
+		}
 	}
 
 	@Action('support')
@@ -111,6 +122,95 @@ export class BotUpdate {
 		} catch (error) {
 			console.error('Ошибка при отправке вопроса в саппорт:', error)
 			await ctx.reply('❌ Не удалось отправить сообщение. Попробуйте позже.')
+		}
+	}
+
+	// Захват текста для регистрации психолога
+	@On('text')
+	async onText(@Ctx() ctx: any) {
+		try {
+			// Обработка регистрации психолога
+			if (ctx?.session?.waitingPsychologistData && ctx.message?.text) {
+				const text = ctx.message.text
+				const telegramId = ctx.from?.id?.toString()
+				const apiUrl = process.env.API_URL || ''
+				
+				if (!apiUrl) {
+					await ctx.reply('❌ API недоступен. Попробуйте позже.')
+					return
+				}
+
+				// Парсим данные из текста
+				const nameMatch = text.match(/Имя:\s*(.+)/i)
+				const descriptionMatch = text.match(/Описание:\s*(.+)/i)
+
+				if (!nameMatch || !descriptionMatch) {
+					await ctx.reply(
+						'❌ Неверный формат. Пожалуйста, используйте формат:\n' +
+						'Имя: [Ваше имя]\n' +
+						'Описание: [Краткое описание о себе и вашем опыте]'
+					)
+					return
+				}
+
+				const name = nameMatch[1].trim()
+				const about = descriptionMatch[1].trim()
+
+				// Отправляем запрос на регистрацию
+				const response = await fetch(`${apiUrl}/psychologists/register-by-invite`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						code: ctx.session.inviteCode,
+						telegramId,
+						name,
+						about,
+					}),
+				})
+
+				const result = await response.json()
+
+				if (result.success) {
+					ctx.session.waitingPsychologistData = false
+					ctx.session.inviteCode = null
+					await ctx.reply(
+						'🎉 Поздравляем! Вы успешно зарегистрированы как психолог.\n\n' +
+						'Теперь вы можете:\n' +
+						'• Получать уведомления о новых обращениях\n' +
+						'• Отвечать на вопросы пользователей\n' +
+						'• Управлять своим профилем\n\n' +
+						'Добро пожаловать в команду! 🚀'
+					)
+				} else {
+					await ctx.reply(`❌ Ошибка регистрации: ${result.message || 'Неизвестная ошибка'}`)
+				}
+				return
+			}
+
+			// Обработка обращения в поддержку (существующий код)
+			if (ctx?.session?.waitingSupportText && ctx.message?.text) {
+				const text = ctx.message.text
+				const telegramId = ctx.from?.id?.toString()
+				const apiUrl = process.env.API_URL || ''
+				if (!apiUrl) {
+					await ctx.reply('❌ API недоступен. Попробуйте позже.')
+					return
+				}
+				await fetch(`${apiUrl}/complaints`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						fromUserId: telegramId,
+						type: 'support, question',
+						description: text,
+					}),
+				})
+				ctx.session.waitingSupportText = false
+				await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
+			}
+		} catch (error) {
+			console.error('Ошибка при обработке текста:', error)
+			await ctx.reply('❌ Произошла ошибка. Попробуйте позже.')
 		}
 	}
 }

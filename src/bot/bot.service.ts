@@ -136,4 +136,54 @@ export class BotService {
 			)
 		}
 	}
+
+	async handlePsychologistRegistration(ctx: Context, code: string) {
+		try {
+			const telegramId = ctx.from?.id?.toString()
+			if (!telegramId) {
+				await ctx.reply('❌ Ошибка: не удалось получить ID пользователя')
+				return
+			}
+
+			// Проверяем валидность кода
+			const apiUrl = process.env.API_URL || ''
+			if (!apiUrl) {
+				await ctx.reply('❌ API недоступен. Попробуйте позже.')
+				return
+			}
+
+			// Проверяем код приглашения
+			const validateResponse = await fetch(`${apiUrl}/psychologists/validate-invite-code`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code }),
+			})
+
+			const validateResult = await validateResponse.json()
+			
+			if (!validateResult.success || !validateResult.data.isValid) {
+				await ctx.reply(
+					`❌ Код приглашения недействителен: ${validateResult.data.message || 'Неизвестная ошибка'}`
+				)
+				return
+			}
+
+			// Показываем форму регистрации
+			await ctx.reply(
+				`🎉 Добро пожаловать! Код приглашения действителен.\n\n` +
+				`Для завершения регистрации как психолог, пожалуйста, заполните форму:\n\n` +
+				`📝 Отправьте ваше имя и описание в следующем формате:\n` +
+				`Имя: [Ваше имя]\n` +
+				`Описание: [Краткое описание о себе и вашем опыте]`
+			)
+
+			// Устанавливаем флаг ожидания данных психолога
+			ctx.session.waitingPsychologistData = true
+			ctx.session.inviteCode = code
+
+		} catch (error) {
+			console.error('Ошибка при обработке регистрации психолога:', error)
+			await ctx.reply('❌ Произошла ошибка. Попробуйте позже.')
+		}
+	}
 }
