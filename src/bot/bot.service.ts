@@ -178,8 +178,9 @@ export class BotService {
 			)
 
 			// Устанавливаем флаг ожидания данных психолога
-			ctx.session.waitingPsychologistData = true
-			ctx.session.inviteCode = code
+			;(ctx as any).session = (ctx as any).session || {}
+			;(ctx as any).session.waitingPsychologistData = true
+			;(ctx as any).session.inviteCode = code
 
 		} catch (error) {
 			console.error('Ошибка при обработке регистрации психолога:', error)

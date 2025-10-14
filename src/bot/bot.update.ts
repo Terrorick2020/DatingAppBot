@@ -14,7 +14,7 @@ export class BotUpdate {
 	@Command('start')
 	async onStart(@Ctx() ctx: Context) {
 		// Проверяем, есть ли параметр в команде start
-		const messageText = ctx.message?.text || ''
+		const messageText = (ctx.message as any)?.text || ''
 		const startParam = messageText.split(' ')[1]
 		
 		if (startParam?.startsWith('psychologist_')) {
@@ -42,8 +42,8 @@ export class BotUpdate {
 		try {
 			await ctx.answerCbQuery()
 			await ctx.reply('✍️ Опишите вашу проблему одним сообщением. Я передам её в техподдержку.')
-			ctx.session = ctx.session || {}
-			ctx.session.waitingSupportText = true
+			;(ctx as any).session = (ctx as any).session || {}
+			;(ctx as any).session.waitingSupportText = true
 		} catch (error) {
 			console.error('Ошибка при переходе к вопросу поддержки:', error)
 			await ctx.answerCbQuery('❌ Произошла ошибка')
@@ -52,8 +52,8 @@ export class BotUpdate {
 
 	@Command('cancel')
 	async onCancel(@Ctx() ctx: any) {
-		ctx.session = ctx.session || {}
-		ctx.session.waitingSupportText = false
+		;(ctx as any).session = (ctx as any).session || {}
+		;(ctx as any).session.waitingSupportText = false
 		await ctx.reply('Отменено.')
 	}
 
@@ -99,8 +99,8 @@ export class BotUpdate {
 	@Action('text')
 	async onAnyText(@Ctx() ctx: any) {
 		try {
-			if (ctx?.session?.waitingSupportText && ctx.message?.text) {
-				const text = ctx.message.text
+			if ((ctx as any)?.session?.waitingSupportText && (ctx.message as any)?.text) {
+				const text = (ctx.message as any).text
 				const telegramId = ctx.from?.id?.toString()
 				const apiUrl = process.env.API_URL || ''
 				if (!apiUrl) {
@@ -116,7 +116,7 @@ export class BotUpdate {
 						description: text,
 					}),
 				})
-				ctx.session.waitingSupportText = false
+				;(ctx as any).session.waitingSupportText = false
 				await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
 			}
 		} catch (error) {
@@ -130,8 +130,8 @@ export class BotUpdate {
 	async onText(@Ctx() ctx: any) {
 		try {
 			// Обработка регистрации психолога
-			if (ctx?.session?.waitingPsychologistData && ctx.message?.text) {
-				const text = ctx.message.text
+			if ((ctx as any)?.session?.waitingPsychologistData && (ctx.message as any)?.text) {
+				const text = (ctx.message as any).text
 				const telegramId = ctx.from?.id?.toString()
 				const apiUrl = process.env.API_URL || ''
 				
@@ -161,7 +161,7 @@ export class BotUpdate {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						code: ctx.session.inviteCode,
+						code: (ctx as any).session.inviteCode,
 						telegramId,
 						name,
 						about,
@@ -171,8 +171,8 @@ export class BotUpdate {
 				const result = await response.json()
 
 				if (result.success) {
-					ctx.session.waitingPsychologistData = false
-					ctx.session.inviteCode = null
+					;(ctx as any).session.waitingPsychologistData = false
+					;(ctx as any).session.inviteCode = null
 					await ctx.reply(
 						'🎉 Поздравляем! Вы успешно зарегистрированы как психолог.\n\n' +
 						'Теперь вы можете:\n' +
@@ -188,8 +188,8 @@ export class BotUpdate {
 			}
 
 			// Обработка обращения в поддержку (существующий код)
-			if (ctx?.session?.waitingSupportText && ctx.message?.text) {
-				const text = ctx.message.text
+			if ((ctx as any)?.session?.waitingSupportText && (ctx.message as any)?.text) {
+				const text = (ctx.message as any).text
 				const telegramId = ctx.from?.id?.toString()
 				const apiUrl = process.env.API_URL || ''
 				if (!apiUrl) {
@@ -205,7 +205,7 @@ export class BotUpdate {
 						description: text,
 					}),
 				})
-				ctx.session.waitingSupportText = false
+				;(ctx as any).session.waitingSupportText = false
 				await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
 			}
 		} catch (error) {
