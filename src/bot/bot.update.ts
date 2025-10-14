@@ -1,4 +1,5 @@
-import { Command, Ctx, Update, Action } from 'nestjs-telegraf'
+import { Action, Command, Ctx, Update } from 'nestjs-telegraf'
+import fetch from 'node-fetch'
 import { Context } from 'telegraf'
 import { BotService } from './bot.service'
 import { UnreadNotificationsService } from './unread-notifications.service'
@@ -23,6 +24,26 @@ export class BotUpdate {
 			console.error('Ошибка при показе меню поддержки:', error)
 			await ctx.answerCbQuery('❌ Произошла ошибка')
 		}
+	}
+
+	@Action('support_ask')
+	async onSupportAsk(@Ctx() ctx: any) {
+		try {
+			await ctx.answerCbQuery()
+			await ctx.reply('✍️ Опишите вашу проблему одним сообщением. Я передам её в техподдержку.')
+			ctx.session = ctx.session || {}
+			ctx.session.waitingSupportText = true
+		} catch (error) {
+			console.error('Ошибка при переходе к вопросу поддержки:', error)
+			await ctx.answerCbQuery('❌ Произошла ошибка')
+		}
+	}
+
+	@Command('cancel')
+	async onCancel(@Ctx() ctx: any) {
+		ctx.session = ctx.session || {}
+		ctx.session.waitingSupportText = false
+		await ctx.reply('Отменено.')
 	}
 
 	@Action('back_to_main')
@@ -60,6 +81,36 @@ export class BotUpdate {
 		} catch (error: any) {
 			console.error('Ошибка при ручной отправке уведомлений:', error)
 			await ctx.reply('❌ Ошибка при отправке уведомлений')
+		}
+	}
+
+	// Захват текста для отправки обращения в поддержку (создаст жалобу SUPPORT)
+	@Action('text')
+	async onAnyText(@Ctx() ctx: any) {
+		try {
+			if (ctx?.session?.waitingSupportText && ctx.message?.text) {
+				const text = ctx.message.text
+				const telegramId = ctx.from?.id?.toString()
+				const apiUrl = process.env.API_URL || ''
+				if (!apiUrl) {
+					await ctx.reply('❌ API недоступен. Попробуйте позже.')
+					return
+				}
+				await fetch(`${apiUrl}/complaints`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						fromUserId: telegramId,
+						type: 'support, question',
+						description: text,
+					}),
+				})
+				ctx.session.waitingSupportText = false
+				await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
+			}
+		} catch (error) {
+			console.error('Ошибка при отправке вопроса в саппорт:', error)
+			await ctx.reply('❌ Не удалось отправить сообщение. Попробуйте позже.')
 		}
 	}
 }

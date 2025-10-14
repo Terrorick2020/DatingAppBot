@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectBot } from 'nestjs-telegraf'
 import { Telegraf } from 'telegraf'
 import { Context } from 'telegraf/typings/context'
-import { previewText, faqData } from '../constant/content'
+import { faqData, previewText } from '../constant/content'
 
 @Injectable()
 export class BotService {
@@ -46,8 +46,12 @@ export class BotService {
 			keyboard.push(row)
 		}
 
-		// Добавляем кнопку "Назад"
+		// Добавляем кнопку "Задать свой вопрос" и "Назад"
 		keyboard.push([
+			{
+				text: '✍️ Задать свой вопрос',
+				callback_data: 'support_ask',
+			},
 			{
 				text: '⬅️ Назад',
 				callback_data: 'back_to_main',
