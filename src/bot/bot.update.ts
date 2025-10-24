@@ -21,6 +21,10 @@ export class BotUpdate {
 			// Обработка регистрации психолога
 			const code = startParam.replace('psychologist_', '')
 			await this.botService.handlePsychologistRegistration(ctx, code)
+		} else if (startParam?.startsWith('ref_')) {
+			// Обработка реферальной ссылки
+			const encodedParams = startParam.replace('ref_', '')
+			await this.botService.handleReferralLink(ctx, encodedParams)
 		} else {
 			// Обычная регистрация пользователя
 			await this.botService.start(ctx)
@@ -63,6 +67,22 @@ export class BotUpdate {
 			await this.botService.backToMain(ctx)
 		} catch (error) {
 			console.error('Ошибка при возврате в главное меню:', error)
+			await ctx.answerCbQuery('❌ Произошла ошибка')
+		}
+	}
+
+	@Action('psychologist_form')
+	async onPsychologistForm(@Ctx() ctx: Context) {
+		try {
+			await ctx.answerCbQuery()
+			await ctx.reply(
+				`📝 Заполните форму регистрации психолога:\n\n` +
+				`Отправьте ваше имя и описание в следующем формате:\n` +
+				`Имя: [Ваше имя]\n` +
+				`Описание: [Краткое описание о себе и вашем опыте]`
+			)
+		} catch (error) {
+			console.error('Ошибка при показе формы психолога:', error)
 			await ctx.answerCbQuery('❌ Произошла ошибка')
 		}
 	}
