@@ -30,8 +30,8 @@ export class BotUpdate {
 			console.log('🔍 Bot: Обработка реферальной ссылки:', encodedParams)
 			await this.botService.handleReferralLink(ctx, encodedParams)
 		} else if (startParam) {
-			// Обработка startapp параметра (для Web App)
-			console.log('🔍 Bot: Обработка startapp параметра:', startParam)
+			// Обработка start параметра (для Web App)
+			console.log('🔍 Bot: Обработка start параметра:', startParam)
 			await this.botService.handleStartAppParam(ctx, startParam)
 		} else {
 			// Обычная регистрация пользователя

@@ -287,7 +287,7 @@ export class BotService {
 		}
 	}
 
-	async handleStartAppParam(ctx: Context, startappParam: string) {
+	async handleStartAppParam(ctx: Context, startParam: string) {
 		try {
 			const clientUrl = process.env.CLIENT_URL || ''
 			if (!clientUrl) {
@@ -295,11 +295,11 @@ export class BotService {
 				return
 			}
 
-			console.log('🔍 Bot: Обработка startapp параметра:', startappParam)
+			console.log('🔍 Bot: Обработка start параметра:', startParam)
 
 			// Декодируем параметры и проверяем их
 			try {
-				const decodedString = atob(decodeURIComponent(startappParam))
+				const decodedString = atob(decodeURIComponent(startParam))
 				const searchParams = new URLSearchParams(decodedString)
 				
 				console.log('🔍 Bot: Декодированная строка:', decodedString)
@@ -324,7 +324,7 @@ export class BotService {
 				console.log('🔍 Bot: Декодированный код:', codeValue)
 
 				// Формируем URL с параметрами
-				const appUrl = `${clientUrl}?startapp=${startappParam}`
+				const appUrl = `${clientUrl}?startapp=${startParam}`
 
 				let message = ''
 				let buttonText = ''
@@ -360,12 +360,12 @@ export class BotService {
 				await ctx.reply(message, inlineKeyboard)
 
 			} catch (decodeError) {
-				console.error('🔍 Bot: Ошибка при декодировании startapp параметра:', decodeError)
+				console.error('🔍 Bot: Ошибка при декодировании start параметра:', decodeError)
 				await ctx.reply('❌ Неверная ссылка приложения.')
 			}
 
 		} catch (error) {
-			console.error('🔍 Bot: Ошибка при обработке startapp параметра:', error)
+			console.error('🔍 Bot: Ошибка при обработке start параметра:', error)
 			await ctx.reply('❌ Произошла ошибка. Попробуйте позже.')
 		}
 	}
