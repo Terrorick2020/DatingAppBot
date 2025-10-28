@@ -4,6 +4,15 @@ import { Telegraf } from 'telegraf'
 import { Context } from 'telegraf/typings/context'
 import { faqData, previewText } from '../constant/content'
 
+// Функция для base64 кодирования в Node.js
+function btoa(str: string): string {
+	return Buffer.from(str, 'utf8').toString('base64')
+}
+
+function atob(str: string): string {
+	return Buffer.from(str, 'base64').toString('utf8')
+}
+
 @Injectable()
 export class BotService {
 	constructor(@InjectBot() private readonly bot: Telegraf<Context>) {}
@@ -168,6 +177,12 @@ export class BotService {
 				return
 			}
 
+			// Кодируем параметры для клиента
+			const encodedCode = btoa(code)
+			const encodedType = btoa('Psychologist')
+			const paramsString = `code=${encodeURIComponent(encodedCode)}&type=${encodeURIComponent(encodedType)}`
+			const finalEncoded = btoa(paramsString)
+
 			// Показываем форму регистрации с кнопкой для открытия мини-приложения
 			const inlineKeyboard = {
 				reply_markup: {
@@ -176,7 +191,7 @@ export class BotService {
 							{
 								text: '📝 Заполнить форму регистрации',
 								web_app: {
-									url: `${process.env.CLIENT_URL}?psychologist_registration=${code}`,
+									url: `${process.env.CLIENT_URL}?startapp=${finalEncoded}`,
 								},
 							},
 						],
@@ -217,32 +232,140 @@ export class BotService {
 				return
 			}
 
-			// Формируем URL с реферальными параметрами
-			const referralUrl = `${clientUrl}?startapp=${encodedParams}`
+			// Декодируем параметры и проверяем их
+			try {
+				const decodedString = atob(decodeURIComponent(encodedParams))
+				const searchParams = new URLSearchParams(decodedString)
+				
+				const encodedCode = searchParams.get('code')
+				const encodedType = searchParams.get('type')
+				
+				if (!encodedCode || !encodedType) {
+					await ctx.reply('❌ Неверная реферальная ссылка.')
+					return
+				}
 
-			const inlineKeyboard = {
-				reply_markup: {
-					inline_keyboard: [
-						[
-							{
-								text: '🚀 Начать знакомства',
-								web_app: {
-									url: referralUrl,
+				// Проверяем, что это реферальная ссылка пользователя
+				const typeValue = atob(decodeURIComponent(encodedType))
+				if (typeValue !== 'User') {
+					await ctx.reply('❌ Неверная реферальная ссылка.')
+					return
+				}
+
+				// Формируем URL с реферальными параметрами
+				const referralUrl = `${clientUrl}?startapp=${encodedParams}`
+
+				const inlineKeyboard = {
+					reply_markup: {
+						inline_keyboard: [
+							[
+								{
+									text: '🚀 Начать знакомства',
+									web_app: {
+										url: referralUrl,
+									},
 								},
-							},
+							],
 						],
-					],
-				},
-			}
+					},
+				}
 
-			await ctx.reply(
-				`👋 Добро пожаловать в 3date!\n\n` +
-				`Вы перешли по реферальной ссылке. Нажмите кнопку ниже, чтобы открыть приложение и начать знакомства!`,
-				inlineKeyboard
-			)
+				await ctx.reply(
+					`👋 Добро пожаловать в 3date!\n\n` +
+					`Вы перешли по реферальной ссылке. Нажмите кнопку ниже, чтобы открыть приложение и начать знакомства!`,
+					inlineKeyboard
+				)
+
+			} catch (decodeError) {
+				console.error('Ошибка при декодировании реферальной ссылки:', decodeError)
+				await ctx.reply('❌ Неверная реферальная ссылка.')
+			}
 
 		} catch (error) {
 			console.error('Ошибка при обработке реферальной ссылки:', error)
+			await ctx.reply('❌ Произошла ошибка. Попробуйте позже.')
+		}
+	}
+
+	async handleStartAppParam(ctx: Context, startappParam: string) {
+		try {
+			const clientUrl = process.env.CLIENT_URL || ''
+			if (!clientUrl) {
+				await ctx.reply('❌ Мини-приложение недоступно. Попробуйте позже.')
+				return
+			}
+
+			console.log('🔍 Bot: Обработка startapp параметра:', startappParam)
+
+			// Декодируем параметры и проверяем их
+			try {
+				const decodedString = atob(decodeURIComponent(startappParam))
+				const searchParams = new URLSearchParams(decodedString)
+				
+				console.log('🔍 Bot: Декодированная строка:', decodedString)
+				console.log('🔍 Bot: Параметры поиска:', Object.fromEntries(searchParams))
+				
+				const encodedCode = searchParams.get('code')
+				const encodedType = searchParams.get('type')
+				
+				console.log('🔍 Bot: encodedCode:', encodedCode)
+				console.log('🔍 Bot: encodedType:', encodedType)
+				
+				if (!encodedCode || !encodedType) {
+					console.log('🔍 Bot: Отсутствуют обязательные параметры')
+					await ctx.reply('❌ Неверная ссылка приложения.')
+					return
+				}
+
+				const typeValue = atob(decodeURIComponent(encodedType))
+				const codeValue = atob(decodeURIComponent(encodedCode))
+				
+				console.log('🔍 Bot: Декодированный тип:', typeValue)
+				console.log('🔍 Bot: Декодированный код:', codeValue)
+
+				// Формируем URL с параметрами
+				const appUrl = `${clientUrl}?startapp=${startappParam}`
+
+				let message = ''
+				let buttonText = ''
+
+				if (typeValue === 'Psych') {
+					message = `👨‍⚕️ Добро пожаловать!\n\n` +
+						`Вы перешли по ссылке для регистрации психолога. Нажмите кнопку ниже, чтобы открыть приложение и зарегистрироваться как специалист!`
+					buttonText = '👨‍⚕️ Регистрация психолога'
+				} else if (typeValue === 'User') {
+					message = `👋 Добро пожаловать в 3date!\n\n` +
+						`Вы перешли по реферальной ссылке. Нажмите кнопку ниже, чтобы открыть приложение и начать знакомства!`
+					buttonText = '🚀 Начать знакомства'
+				} else {
+					await ctx.reply('❌ Неверный тип ссылки.')
+					return
+				}
+
+				const inlineKeyboard = {
+					reply_markup: {
+						inline_keyboard: [
+							[
+								{
+									text: buttonText,
+									web_app: {
+										url: appUrl,
+									},
+								},
+							],
+						],
+					},
+				}
+
+				await ctx.reply(message, inlineKeyboard)
+
+			} catch (decodeError) {
+				console.error('🔍 Bot: Ошибка при декодировании startapp параметра:', decodeError)
+				await ctx.reply('❌ Неверная ссылка приложения.')
+			}
+
+		} catch (error) {
+			console.error('🔍 Bot: Ошибка при обработке startapp параметра:', error)
 			await ctx.reply('❌ Произошла ошибка. Попробуйте позже.')
 		}
 	}

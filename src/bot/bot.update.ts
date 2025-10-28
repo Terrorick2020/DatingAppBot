@@ -17,16 +17,25 @@ export class BotUpdate {
 		const messageText = (ctx.message as any)?.text || ''
 		const startParam = messageText.split(' ')[1]
 		
+		console.log('🔍 Bot: Получена команда /start с параметром:', startParam)
+		
 		if (startParam?.startsWith('psychologist_')) {
 			// Обработка регистрации психолога
 			const code = startParam.replace('psychologist_', '')
+			console.log('🔍 Bot: Обработка регистрации психолога с кодом:', code)
 			await this.botService.handlePsychologistRegistration(ctx, code)
 		} else if (startParam?.startsWith('ref_')) {
 			// Обработка реферальной ссылки
 			const encodedParams = startParam.replace('ref_', '')
+			console.log('🔍 Bot: Обработка реферальной ссылки:', encodedParams)
 			await this.botService.handleReferralLink(ctx, encodedParams)
+		} else if (startParam) {
+			// Обработка startapp параметра (для Web App)
+			console.log('🔍 Bot: Обработка startapp параметра:', startParam)
+			await this.botService.handleStartAppParam(ctx, startParam)
 		} else {
 			// Обычная регистрация пользователя
+			console.log('🔍 Bot: Обычная регистрация пользователя')
 			await this.botService.start(ctx)
 		}
 	}
