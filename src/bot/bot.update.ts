@@ -136,7 +136,8 @@ export class BotUpdate {
 					await ctx.reply('❌ API недоступен. Попробуйте позже.')
 					return
 				}
-				await fetch(`${apiUrl}/complaints`, {
+				
+				const response = await fetch(`${apiUrl}/complaints`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -145,8 +146,19 @@ export class BotUpdate {
 						description: text,
 					}),
 				})
+				
 				;(ctx as any).session.waitingSupportText = false
-				await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
+				
+				if (response.ok) {
+					const result = await response.json()
+					if (result.success) {
+						await ctx.reply('✅ Ваше сообщение передано в техподдержку. Мы ответим в ближайшее время.')
+					} else {
+						await ctx.reply('❌ Не удалось отправить сообщение. Попробуйте позже.')
+					}
+				} else {
+					await ctx.reply('❌ Не удалось отправить сообщение. Попробуйте позже.')
+				}
 			}
 		} catch (error) {
 			console.error('Ошибка при отправке вопроса в саппорт:', error)
